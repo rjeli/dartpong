@@ -1,4 +1,6 @@
 packages/
+web/packages/
+bin/packages/
 pubspec.lock
 .project
 .buildlog
