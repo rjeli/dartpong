@@ -1,0 +1,3 @@
+- inputs should immediately send to server, not update locally
+- handle socket messages on client and server to update game instance
+- implement fake latency on server

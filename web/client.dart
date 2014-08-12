@@ -1,6 +1,10 @@
-import 'dart:html';
+import 'dart:html' hide Player;
+import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:play_pixi/pixi.dart' as PIXI;
+
+import 'package:dartpong/game_core.dart';
 
 void main(){
   var ren = PIXI.autoDetectRenderer(480, 320);
@@ -51,14 +55,17 @@ class ConnectingState implements State{
   Function enterState;
 
   PIXI.Text displayedText;
+  bool connected;
 
   void init(WebSocket socket, Keyboard kb, Function enterState){
     this.socket = socket;
     this.kb = kb;
     this.enterState = enterState;
 
+    connected = false;
+
     stage = new PIXI.Stage(0x660099);
-    displayedText = new PIXI.Text('connecting...', new PIXI.TextStyle()..font = '35px Snippet');
+    displayedText = new PIXI.Text('connecting...', new PIXI.TextStyle()..font = '15px Snippet');
     displayedText.position.x = 10;
     displayedText.position.y = 10;
     stage.addChild(displayedText);
@@ -67,20 +74,111 @@ class ConnectingState implements State{
 
     socket.onOpen.first.then((_){
       print('connected to websocket server!! from, connectingstate');
-      displayedText.setText('connected.');
+      displayedText.setText('connected. press j to enter menu');
+      connected = true;
+
+      Int16List samplePacket = new Int16List(3);
+      samplePacket[0] = 1234;
+      samplePacket[1] = 0102;
+      samplePacket[2] = 1337;
+      socket.sendTypedData(samplePacket);
     });
   }
   void destroy(){
 
   }
   void update(){
-    if(kb.isPressed(KeyCode.A)){
-      print('hey, this is connectingstate, a is pressed');
-    }
-    if(kb.isPressed(KeyCode.B)){
-      print('hey, this is connectingstbte, b is pressed');
+    if(kb.isPressed(KeyCode.J) && connected){
+      enterState(new MenuState());
     }
   }
+}
+
+class MenuState implements State{
+  WebSocket socket;
+  PIXI.Stage stage;
+  Keyboard kb;
+  Function enterState;
+
+  PIXI.Text menuText;
+
+  void init(WebSocket socket, Keyboard kb, Function enterState){
+    this.socket = socket;
+    this.kb = kb;
+    this.enterState = enterState;
+
+    stage = new PIXI.Stage(0x00CC77);
+
+    menuText = new PIXI.Text("press q to join queue", new PIXI.TextStyle()..font = '15px Snippet');
+    menuText.position.x = 10;
+    menuText.position.y = 10;
+    stage.addChild(menuText);
+  }
+  void destroy(){
+
+  }
+  void update(){
+    if(kb.isPressed(KeyCode.Q)){
+      enterState(new GameState());
+    }
+  }
+}
+
+class GameState implements State{
+  WebSocket socket;
+  PIXI.Stage stage;
+  Keyboard kb;
+  Function enterState;
+
+  PIXI.Graphics graphics;
+  GameInstance gameInstance;
+  bool running;
+  Player me, other;
+
+  void init(WebSocket socket, Keyboard kb, Function enterState){
+    this.socket = socket;
+    this.kb = kb;
+    this.enterState = enterState;
+
+    me = new Player();
+    other = new Player();
+
+    stage = new PIXI.Stage(0x660022);
+    graphics = new PIXI.Graphics();
+    stage.addChild(graphics);
+
+    gameInstance = new GameInstance(me, other);
+    running = true;
+    tickLoop();
+  }
+
+  void destroy(){
+    running = false;
+  }
+
+  void update(){
+    graphics.clear();
+    graphics.beginFill(0x00FF00);
+    graphics.drawRect(10, me.y, 10, 40);
+    graphics.drawRect(460, other.y, 10, 40);
+    graphics.drawRect(gameInstance.ballX, gameInstance.ballY, 10, 10);
+  }
+
+  void tickLoop(){
+    if(running) new Future.delayed(const Duration(milliseconds: 25), tickLoop);
+    print('hey, this is tickloop');
+    if(kb.isPressed(KeyCode.UP) && kb.isPressed(KeyCode.DOWN)){
+      me.direction = 0;
+    } else if(kb.isPressed(KeyCode.UP)){
+      me.direction = -1;
+    } else if(kb.isPressed(KeyCode.DOWN)){
+      me.direction = 1;
+    } else{
+      me.direction = 0;
+    }
+    gameInstance.tick();
+  }
+
 }
 
 class Keyboard{

@@ -2,9 +2,12 @@ library dartpong;
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http_server/http_server.dart' as http_server;
 import 'package:route/server.dart' show Router;
+
+import 'package:dartpong/game_core.dart';
 
 const int PORT = 8080;
 
@@ -59,11 +62,13 @@ class GameServer{
   void handleNewConnection(WebSocket socket){
     print('adding new client');
     clients[socket] = new Client(socket);
-    socket.listen((data) => handleData(socket, data));
+    socket.listen((data) => handleMessage(socket, data));
   }
 
   void handleMessage(WebSocket socket, data){
-    print('received data: $data');
+    print('received data: $data with type ${data.runtimeType.toString()}');
+    Int16List packetReceived = new Int16List.view(data.buffer, 6);
+    print('now, packetReceived is a ${packetReceived.runtimeType.toString()} and contains $packetReceived');
   }
 }
 
