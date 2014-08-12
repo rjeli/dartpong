@@ -1,0 +1,6 @@
+name: dartpong
+version: 0.0.1
+dependencies:
+    browser: any
+    route: any
+    http_server: any
