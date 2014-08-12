@@ -4,3 +4,4 @@ dependencies:
     browser: any
     route: any
     http_server: any
+    play_pixi: any

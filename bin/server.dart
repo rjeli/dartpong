@@ -47,6 +47,4 @@ void main(){
     //serve everything else not routed through the virtual directory
     virDir.serve(router.defaultStream);
   });
-
-  return 0;
 }
