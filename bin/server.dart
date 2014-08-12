@@ -8,11 +8,9 @@ import 'package:route/server.dart' show Router;
 
 const int PORT = 8080;
 
-void handleWebSocket(WebSocket socket){
-  print('websocket connection');
-}
-
 void main(){
+  GameServer gameServer = new GameServer();
+
   var webPath = Platform.script.resolve('../web').toFilePath();
   if(!new Directory(webPath).existsSync()){
     print('error! web directory not found');
@@ -25,7 +23,7 @@ void main(){
     //upgrade websocket requests to /ws
     router.serve('/ws')
           .transform(new WebSocketTransformer())
-          .listen(handleWebSocket);
+          .listen(gameServer.handleNewConnection);
     
     //set up default handler to serve web files
     var virDir = new http_server.VirtualDirectory(webPath);
@@ -47,4 +45,32 @@ void main(){
     //serve everything else not routed through the virtual directory
     virDir.serve(router.defaultStream);
   });
+}
+
+class GameServer{
+  Map<WebSocket, Client> clients;
+  List<GameInstance> games;
+
+  GameServer(){
+    clients = new Map();
+    games = new List();
+  }
+
+  void handleNewConnection(WebSocket socket){
+    print('adding new client');
+    clients[socket] = new Client(socket);
+    socket.listen((data) => handleData(socket, data));
+  }
+
+  void handleMessage(WebSocket socket, data){
+    print('received data: $data');
+  }
+}
+
+class Client{
+  WebSocket socket;
+
+  Client(WebSocket socket){
+    this.socket = socket;
+  }
 }

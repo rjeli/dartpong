@@ -50,13 +50,25 @@ class ConnectingState implements State{
   Keyboard kb;
   Function enterState;
 
+  PIXI.Text displayedText;
+
   void init(WebSocket socket, Keyboard kb, Function enterState){
     this.socket = socket;
     this.kb = kb;
     this.enterState = enterState;
 
     stage = new PIXI.Stage(0x660099);
+    displayedText = new PIXI.Text('connecting...', new PIXI.TextStyle()..font = '35px Snippet');
+    displayedText.position.x = 10;
+    displayedText.position.y = 10;
+    stage.addChild(displayedText);
+
     socket = new WebSocket('ws://${Uri.base.host}:${Uri.base.port}/ws');
+
+    socket.onOpen.first.then((_){
+      print('connected to websocket server!! from, connectingstate');
+      displayedText.setText('connected.');
+    });
   }
   void destroy(){
 
