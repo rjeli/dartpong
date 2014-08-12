@@ -4,6 +4,7 @@ bin/packages
 pubspec.lock
 .project
 .buildlog
+*.js
 *.js_
 *.js.deps
 *.js.map
