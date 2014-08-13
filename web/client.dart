@@ -8,17 +8,29 @@ import 'package:dartpong/game_core.dart';
 import 'package:dartpong/packets.dart' as Packet;
 
 void main(){
-  var ren = PIXI.autoDetectRenderer(480, 320);
+  Client client = new Client();
+}
+
+class Client{
+  PIXI.Renderer ren;
   WebSocket socket;
-  Keyboard kb = new Keyboard();
+  Keyboard kb; 
   State currentState;
 
-  document.body.append(ren.view);
-  ren.view.style.display = 'block';
-  ren.view.style.margin = 'auto';
+  Client(){
+    ren = PIXI.autoDetectRenderer(480, 320);
+    kb = new Keyboard();
 
-  window.onKeyDown.listen((e) => kb.pressKey(e.keyCode));
-  window.onKeyUp.listen((e) => kb.releaseKey(e.keyCode));
+    document.body.append(ren.view);
+    ren.view.style.display = 'block';
+    ren.view.style.margin = 'auto';
+
+    window.onKeyDown.listen((e) => kb.pressKey(e.keyCode));
+    window.onKeyUp.listen((e) => kb.releaseKey(e.keyCode));
+
+    enterState(new ConnectingState());
+    PIXI.requestAnimFrame(animate);
+  }
 
   animate(num delta){
     PIXI.requestAnimFrame(animate);
@@ -33,9 +45,6 @@ void main(){
     currentState = newState;
     currentState.init(socket, kb, enterState);
   }
-
-  enterState(new ConnectingState());
-  PIXI.requestAnimFrame(animate);
 }
 
 class State{
@@ -49,12 +58,20 @@ class State{
     this.socket = socket;
     this.kb = kb;
     this.enterState = enterState;
+    packet = new List();
   }
   void destroy(){}
   void update(){}
   void onMessage(data){}
   void addPacket(List<int> bytes){
-
+    packet.addAll(bytes);
+  }
+  void sendPacket(){
+    var typedPacket = new Uint16List.fromList(packet);
+    bool socketExists = (socket != null);
+    print('sending packet ${typedPacket}, socket is $socketExists');
+    socket.sendTypedData(typedPacket);
+    packet = [];
   }
 }
 
@@ -65,6 +82,7 @@ class ConnectingState extends State{
 
   void init(WebSocket socket, Keyboard kb, Function enterState){
     super.init(socket, kb, enterState);
+    print('in connectingstate- socket is $socket kb is $kb enterState is $enterState ');
 
     connected = false;
 
@@ -77,7 +95,7 @@ class ConnectingState extends State{
     socket = new WebSocket('ws://${Uri.base.host}:${Uri.base.port}/ws');
 
     socket.onOpen.first.then((_){
-      print('connected to websocket server!! from, connectingstate');
+      print('in connectingstate, after connect- socket is $socket kb is $kb enterState is $enterState ');
       displayedText.setText('connected. press j to enter menu');
       connected = true;
 
@@ -97,6 +115,7 @@ class MenuState extends State{
 
   void init(WebSocket socket, Keyboard kb, Function enterState){
     super.init(socket, kb, enterState);
+    print('in menustate- socket is $socket kb is $kb enterState is $enterState ');
 
     stage = new PIXI.Stage(0x00CC77);
 
@@ -107,7 +126,7 @@ class MenuState extends State{
   }
   void update(){
     if(kb.isPressed(KeyCode.Q)){
-      enterState(new GameState());
+      enterState(new QueueState());
     }
   }
 }
@@ -117,6 +136,7 @@ class QueueState extends State{
 
   void init(WebSocket socket, Keyboard kb, Function enterState){
     super.init(socket, kb, enterState);
+    print('in queuestate- socket is $socket kb is $kb enterState is $enterState ');
 
     stage = new PIXI.Stage(0x00CC77);
 
@@ -124,6 +144,9 @@ class QueueState extends State{
     queueText.position.x = 10;
     queueText.position.y = 10;
     stage.addChild(queueText);
+
+    addPacket([Packet.ENTER_QUEUE]);
+    sendPacket();
   }
 }
 

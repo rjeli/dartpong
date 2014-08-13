@@ -67,6 +67,7 @@ class GameServer{
 
   void handleMessage(WebSocket socket, data){
     Uint16List packetReceived = new Uint16List.view(data.buffer, 6);
+    print('received packet $packetReceived');
   }
 }
 
