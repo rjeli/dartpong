@@ -66,9 +66,7 @@ class GameServer{
   }
 
   void handleMessage(WebSocket socket, data){
-    print('received data: $data with type ${data.runtimeType.toString()}');
-    Int16List packetReceived = new Int16List.view(data.buffer, 6);
-    print('now, packetReceived is a ${packetReceived.runtimeType.toString()} and contains $packetReceived');
+    Uint16List packetReceived = new Uint16List.view(data.buffer, 6);
   }
 }
 
